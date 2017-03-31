@@ -1,3 +1,5 @@
+require 'digest'
+
 module Paymentwall
   class Pingback < Paymentwall::Base
     include Deprecated::Pingback
@@ -219,7 +221,6 @@ module Paymentwall
 
       base_string += secret
 
-      require 'digest'
       if version.to_i == Base::SIGNATURE_VERSION_3
         Digest::SHA256.hexdigest(base_string)
       else
