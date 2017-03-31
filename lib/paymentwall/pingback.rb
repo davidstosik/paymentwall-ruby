@@ -7,7 +7,7 @@ module Paymentwall
 		PINGBACK_TYPE_RISK_UNDER_REVIEW = 200
 	    PINGBACK_TYPE_RISK_REVIEWED_ACCEPTED = 201
 	    PINGBACK_TYPE_RISK_REVIEWED_DECLINED = 202
-		
+
 		def initialize(parameters = {}, ipAddress = '')
 			@parameters = parameters
 			@ipAddress = ipAddress
@@ -20,7 +20,7 @@ module Paymentwall
 				if self.isIpAddressValid() || skipIpWhitelistCheck
 					if self.isSignatureValid()
 						validated = true
-					else 
+					else
 						self.appendToErrors('Wrong signature')
 					end
 				else
@@ -48,7 +48,7 @@ module Paymentwall
 				signatureParams.each do |field|
 					signatureParamsToSign[field] = @parameters.include?(field) ? @parameters[field] : nil
 				end
-				
+
 				@parameters['sign_version'] = self.class::SIGNATURE_VERSION_1
 
 			else
@@ -56,7 +56,7 @@ module Paymentwall
 			end
 
 			signatureCalculated = self.calculateSignature(signatureParamsToSign, self.class::getSecretKey(), @parameters['sign_version'])
-			
+
 			signature = @parameters.include?('sig') ? @parameters['sig'] : nil
 
 			signature == signatureCalculated
@@ -99,7 +99,7 @@ module Paymentwall
 		def getParameter(param)
 			if @parameters.include?(param)
 				return @parameters[param]
-			else 
+			else
 				return nil
 			end
 		end
@@ -177,7 +177,7 @@ module Paymentwall
 		end
 
 		def isDeliverable()
-			self.getType() == self.class::PINGBACK_TYPE_REGULAR || 
+			self.getType() == self.class::PINGBACK_TYPE_REGULAR ||
 			self.getType() == self.class::PINGBACK_TYPE_GOODWILL ||
 			self.getType() == self.class::PINGBACK_TYPE_RISK_REVIEWED_ACCEPTED
 		end
@@ -194,7 +194,7 @@ module Paymentwall
 		protected
 
 		def calculateSignature(params, secret, version)
-			
+
 			params = params.clone
 			params.delete('sig')
 
@@ -203,7 +203,7 @@ module Paymentwall
 
 			baseString = ''
 
-			keys.each do |name| 
+			keys.each do |name|
 				p = params[name]
 
 				# converting array to hash
@@ -214,7 +214,7 @@ module Paymentwall
 				if p.kind_of?(Hash)
 					subKeys = sortKeys ? p.keys.sort : p.keys;
 					subKeys.each do |key|
-						value = p[key] 
+						value = p[key]
 						baseString += "#{name}[#{key}]=#{value}"
 					end
 				else
@@ -227,7 +227,7 @@ module Paymentwall
 			require 'digest'
 			if version.to_i == self.class::SIGNATURE_VERSION_3
 				return Digest::SHA256.hexdigest(baseString)
-			else 
+			else
 				return Digest::MD5.hexdigest(baseString)
 			end
 		end

@@ -18,7 +18,7 @@ module Paymentwall
 			@periodLength = periodLength
 			@periodType = periodType
 			@recurring = recurring
-			if (productType == Paymentwall::Product::TYPE_SUBSCRIPTION && recurring && recurring != 0) 
+			if (productType == Paymentwall::Product::TYPE_SUBSCRIPTION && recurring && recurring != 0)
 				@trialProduct = trialProduct
 			end
 		end
@@ -30,7 +30,7 @@ module Paymentwall
 		def getAmount()
 			@amount
 		end
-	 
+
 		def getCurrencyCode
 			@currencyCode
 		end

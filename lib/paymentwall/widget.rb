@@ -1,6 +1,6 @@
 module Paymentwall
 	class Widget < Paymentwall::Base
-		
+
 		BASE_URL = 'https://api.paymentwall.com/api'
 
 		def initialize(userId, widgetCode, products = [], extraParams = {})
@@ -14,7 +14,7 @@ module Paymentwall
 			return self.class::getApiType() != self.class::API_CART ? self.class::DEFAULT_SIGNATURE_VERSION : self.class::SIGNATURE_VERSION_2
 		end
 
-		
+
 		def getUrl()
 			params = {
 				'key' => self.class::getAppKey(),
@@ -34,8 +34,8 @@ module Paymentwall
 
 							postTrialProduct = nil
 							if product.getTrialProduct().kind_of?(Paymentwall::Product)
- 								postTrialProduct = product
- 								product = product.getTrialProduct()
+								postTrialProduct = product
+								product = product.getTrialProduct()
 							end
 
 							params['amount'] = product.getAmount()
@@ -65,7 +65,7 @@ module Paymentwall
 						else
 							#TODO: self.appendToErrors('Not an instance of Paymentwall::Product')
 						end
-					else 
+					else
 						#TODO: self.appendToErrors('Only 1 product is allowed in flexible widget call')
 					end
 
@@ -132,7 +132,7 @@ module Paymentwall
 
 				keys = params.keys.sort
 
-				keys.each do |name| 
+				keys.each do |name|
 					p = params[name]
 
 					# converting array to hash
@@ -143,7 +143,7 @@ module Paymentwall
 					if p.kind_of?(Hash)
 						subKeys = p.keys.sort
 						subKeys.each do |key|
-							value = p[key] 
+							value = p[key]
 							baseString += "#{name}[#{key}]=#{value}"
 						end
 					else
@@ -155,13 +155,13 @@ module Paymentwall
 
 				if version == self::SIGNATURE_VERSION_3
 					return Digest::SHA256.hexdigest(baseString)
-				else 
+				else
 					return Digest::MD5.hexdigest(baseString)
 				end
 
 			end
 		end
-		
+
 		protected
 
 		def buildController(widget, flexibleCall = false)
