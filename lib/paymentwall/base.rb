@@ -1,5 +1,6 @@
 module Paymentwall
   class Base
+    include Errors
     include Paymentwall::Deprecated::Base
 
     VERSION = '1.0.0'
@@ -19,16 +20,6 @@ module Paymentwall
 
     class << self
       attr_accessor :api_type, :app_key, :secret_key
-    end
-
-    attr_reader :errors
-
-    def initialize
-      @errors = []
-    end
-
-    def error_summary
-      errors.join("\n")
     end
   end
 end

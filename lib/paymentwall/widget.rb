@@ -3,7 +3,6 @@ module Paymentwall
     BASE_URL = 'https://api.paymentwall.com/api'
 
     def initialize(userId, widgetCode, products = [], extraParams = {})
-      super()
       @userId = userId
       @widgetCode = widgetCode
       @extraParams = extraParams

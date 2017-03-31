@@ -20,7 +20,6 @@ module Paymentwall
     attr_accessor :parameters
 
     def initialize(parameters = {}, ip_address = '')
-      super()
       @parameters = parameters
       @ip_address = ip_address
     end
