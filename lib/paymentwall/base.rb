@@ -1,5 +1,7 @@
 module Paymentwall
   class Base
+    include Paymentwall::Deprecated::Base
+
     VERSION = '1.0.0'
 
     API_VC = 1
@@ -15,51 +17,18 @@ module Paymentwall
     SIGNATURE_VERSION_2 = 2
     SIGNATURE_VERSION_3 = 3
 
-    @@apiType
-    @@appKey
-    @@secretKey
-
-    def self.setApiType(value)
-      @@apiType = value
-      self
+    class << self
+      attr_accessor :api_type, :app_key, :secret_key
     end
 
-    def self.getApiType
-      @@apiType.to_i
+    attr_reader :errors
+
+    def initialize
+      @errors = []
     end
 
-    def self.setAppKey(value)
-      @@appKey = value
-      self
-    end
-
-    def self.getAppKey
-      @@appKey.to_s
-    end
-
-    def self.setSecretKey(value)
-      @@secretKey = value
-      self
-    end
-
-    def self.getSecretKey
-      @@secretKey.to_s
-    end
-
-    def getErrors
-      @errors
-    end
-
-    def getErrorSummary
-      @errors.join("\n")
-    end
-
-    protected
-
-    def appendToErrors(err)
-      @errors ||=[]
-      @errors.push(err)
-      self
+    def error_summary
+      errors.join("\n")
     end
   end
 end

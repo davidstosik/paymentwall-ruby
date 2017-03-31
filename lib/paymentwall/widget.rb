@@ -3,6 +3,7 @@ module Paymentwall
     BASE_URL = 'https://api.paymentwall.com/api'
 
     def initialize(userId, widgetCode, products = [], extraParams = {})
+      super()
       @userId = userId
       @widgetCode = widgetCode
       @extraParams = extraParams
@@ -10,19 +11,24 @@ module Paymentwall
     end
 
     def getDefaultSignatureVersion()
-      return self.class::getApiType() != self.class::API_CART ? self.class::DEFAULT_SIGNATURE_VERSION : self.class::SIGNATURE_VERSION_2
+      if Base::api_type == Base::API_CART
+        Base::DEFAULT_SIGNATURE_VERSION
+      else
+        Base::SIGNATURE_VERSION_2
+      end
     end
 
     def getUrl()
       params = {
-        'key' => self.class::getAppKey(),
+        'key' => Base::app_key,
         'uid' => @userId,
         'widget' => @widgetCode
       }
 
       productsNumber = @products.count()
 
-      if self.class::getApiType() == self.class::API_GOODS
+      case Base::api_type
+      when Base::API_GOODS
 
         if @products.kind_of?(Array)
 
@@ -61,15 +67,15 @@ module Paymentwall
                 end
               end
             else
-              #TODO: self.appendToErrors('Not an instance of Paymentwall::Product')
+              #TODO: errors << 'Not an instance of Paymentwall::Product'
             end
           else
-            #TODO: self.appendToErrors('Only 1 product is allowed in flexible widget call')
+            #TODO: errors << 'Only 1 product is allowed in flexible widget call'
           end
 
         end
 
-      elsif self.class::getApiType() == self.class::API_CART
+      when Base::API_CART
         index = 0
         @products.each do |product|
           params['external_ids[' + index.to_s + ']'] = product.getId()
@@ -92,9 +98,9 @@ module Paymentwall
 
       params = params.merge(@extraParams)
 
-      params['sign'] = self.class.calculateSignature(params, self.class::getSecretKey(), signatureVersion)
+      params['sign'] = self.class.calculateSignature(params, Base::secret_key, signatureVersion)
 
-      return self.class::BASE_URL + '/' + self.buildController(@widgetCode) + '?' + self.http_build_query(params)
+      return Base::BASE_URL + '/' + self.buildController(@widgetCode) + '?' + self.http_build_query(params)
     end
 
     def getHtmlCode(attributes = {})
@@ -163,20 +169,21 @@ module Paymentwall
     protected
 
     def buildController(widget, flexibleCall = false)
-      if self.class::getApiType() == self.class::API_VC
+      case Base::api_type
+      when Base::API_VC
         if !/^w|s|mw/.match(widget)
-          return self.class::CONTROLLER_PAYMENT_VIRTUAL_CURRENCY
+          return Base::CONTROLLER_PAYMENT_VIRTUAL_CURRENCY
         end
-      elsif self.class::getApiType() == self.class::API_GOODS
+      when Base::API_GOODS
         if !flexibleCall
           if !/^w|s|mw/.match(widget)
-            return self.class::CONTROLLER_PAYMENT_DIGITAL_GOODS
+            return Base::CONTROLLER_PAYMENT_DIGITAL_GOODS
           end
         else
-          return self.class::CONTROLLER_PAYMENT_DIGITAL_GOODS
+          return Base::CONTROLLER_PAYMENT_DIGITAL_GOODS
         end
       else
-        return self.class::CONTROLLER_PAYMENT_CART
+        return Base::CONTROLLER_PAYMENT_CART
       end
 
       return ''

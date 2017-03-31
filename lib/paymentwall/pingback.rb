@@ -4,10 +4,11 @@ module Paymentwall
     PINGBACK_TYPE_GOODWILL = 1
     PINGBACK_TYPE_NEGATIVE = 2
     PINGBACK_TYPE_RISK_UNDER_REVIEW = 200
-      PINGBACK_TYPE_RISK_REVIEWED_ACCEPTED = 201
-      PINGBACK_TYPE_RISK_REVIEWED_DECLINED = 202
+    PINGBACK_TYPE_RISK_REVIEWED_ACCEPTED = 201
+    PINGBACK_TYPE_RISK_REVIEWED_DECLINED = 202
 
     def initialize(parameters = {}, ipAddress = '')
+      super()
       @parameters = parameters
       @ipAddress = ipAddress
     end
@@ -20,13 +21,13 @@ module Paymentwall
           if self.isSignatureValid()
             validated = true
           else
-            self.appendToErrors('Wrong signature')
+            errors << 'Wrong signature'
           end
         else
-          self.appendToErrors('IP address is not whitelisted')
+          errors << 'IP address is not whitelisted'
         end
       else
-        self.appendToErrors('Missing parameters')
+        errors << 'Missing parameters'
       end
 
       validated
@@ -35,26 +36,27 @@ module Paymentwall
     def isSignatureValid()
       signatureParamsToSign = {}
 
-      if self.class::getApiType() == self.class::API_VC
+      case Base::api_type
+      when Base::API_VC
         signatureParams = Array['uid', 'currency', 'type', 'ref']
-      elsif self.class::getApiType() == self.class::API_GOODS
+      when Base::API_GOODS
         signatureParams = Array['uid', 'goodsid', 'slength', 'speriod', 'type', 'ref']
       else
         signatureParams = Array['uid', 'goodsid', 'type', 'ref']
       end
 
-      if !@parameters.include?('sign_version') || @parameters['sign_version'].to_i == self.class::SIGNATURE_VERSION_1
+      if !@parameters.include?('sign_version') || @parameters['sign_version'].to_i == Base::SIGNATURE_VERSION_1
         signatureParams.each do |field|
           signatureParamsToSign[field] = @parameters.include?(field) ? @parameters[field] : nil
         end
 
-        @parameters['sign_version'] = self.class::SIGNATURE_VERSION_1
+        @parameters['sign_version'] = Base::SIGNATURE_VERSION_1
 
       else
         signatureParamsToSign = @parameters
       end
 
-      signatureCalculated = self.calculateSignature(signatureParamsToSign, self.class::getSecretKey(), @parameters['sign_version'])
+      signatureCalculated = self.calculateSignature(signatureParamsToSign, Base::secret_key, @parameters['sign_version'])
 
       signature = @parameters.include?('sig') ? @parameters['sig'] : nil
 
@@ -77,9 +79,10 @@ module Paymentwall
       errorsNumber = 0
       requiredParams = []
 
-      if self.class::getApiType() == self.class::API_VC
+      case Base::api_type
+      when Base::API_VC
         requiredParams = ['uid', 'currency', 'type', 'ref', 'sig']
-      elsif self.class::getApiType() == self.class::API_GOODS
+      when Base::API_GOODS
         requiredParams = ['uid', 'goodsid', 'type', 'ref', 'sig']
       else
         requiredParams = ['uid', 'goodsid', 'type', 'ref', 'sig']
@@ -87,7 +90,7 @@ module Paymentwall
 
       requiredParams.each do |field|
         if !@parameters.include?(field) # || $parameters[field] === ''
-          self.appendToErrors("Parameter #{field} is missing")
+          errors << "Parameter #{field} is missing"
           errorsNumber += 1
         end
       end
@@ -197,7 +200,7 @@ module Paymentwall
       params = params.clone
       params.delete('sig')
 
-      sortKeys = (version.to_i == self.class::SIGNATURE_VERSION_2 or version.to_i == self.class::SIGNATURE_VERSION_3)
+      sortKeys = (version.to_i == Base::SIGNATURE_VERSION_2 or version.to_i == Base::SIGNATURE_VERSION_3)
       keys = sortKeys ? params.keys.sort : params.keys
 
       baseString = ''
@@ -224,7 +227,7 @@ module Paymentwall
       baseString += secret
 
       require 'digest'
-      if version.to_i == self.class::SIGNATURE_VERSION_3
+      if version.to_i == Base::SIGNATURE_VERSION_3
         return Digest::SHA256.hexdigest(baseString)
       else
         return Digest::MD5.hexdigest(baseString)
