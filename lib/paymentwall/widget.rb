@@ -14,7 +14,6 @@ module Paymentwall
 			return self.class::getApiType() != self.class::API_CART ? self.class::DEFAULT_SIGNATURE_VERSION : self.class::SIGNATURE_VERSION_2
 		end
 
-
 		def getUrl()
 			params = {
 				'key' => self.class::getAppKey(),
