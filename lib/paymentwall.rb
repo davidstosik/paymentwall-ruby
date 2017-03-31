@@ -1,4 +1,5 @@
 require 'uri'
+require_relative 'paymentwall/deprecated.rb'
 require_relative 'paymentwall/deprecated/errors.rb'
 require_relative 'paymentwall/deprecated/base.rb'
 require_relative 'paymentwall/deprecated/pingback.rb'

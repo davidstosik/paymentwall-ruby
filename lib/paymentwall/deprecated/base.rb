@@ -7,35 +7,35 @@ module Paymentwall
 
       module ClassMethods
         def setApiType(value)
-          warn "[DEPRECATION] `setApiType` is deprecated. Please use `api_type=` instead."
+          Deprecated.warn_deprecated(__method__, 'api_type=')
           self.api_type = value
           self
         end
 
         def getApiType
-          warn "[DEPRECATION] `getApiType` is deprecated. Please use `api_type` instead."
+          Deprecated.warn_deprecated(__method__, 'api_type')
           api_type
         end
 
         def setAppKey(value)
-          warn "[DEPRECATION] `setAppKey` is deprecated. Please use `app_key=` instead."
+          Deprecated.warn_deprecated(__method__, 'app_key=')
           self.app_key = value
           self
         end
 
         def getAppKey
-          warn "[DEPRECATION] `getAppKey` is deprecated. Please use `app_key` instead."
+          Deprecated.warn_deprecated(__method__, 'app_key')
           app_key
         end
 
         def setSecretKey(value)
-          warn "[DEPRECATION] `setSecretKey` is deprecated. Please use `secret_key=` instead."
+          Deprecated.warn_deprecated(__method__, 'secret_key=')
           self.secret_key = value
           self
         end
 
         def getSecretKey
-          warn "[DEPRECATION] `getSecretKey` is deprecated. Please use `secret_key` instead."
+          Deprecated.warn_deprecated(__method__, 'secret_key')
           secret_key
         end
       end
