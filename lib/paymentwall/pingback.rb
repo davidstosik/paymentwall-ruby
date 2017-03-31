@@ -1,5 +1,7 @@
 module Paymentwall
   class Pingback < Paymentwall::Base
+    include Deprecated::Pingback
+
     PINGBACK_TYPE_REGULAR = 0
     PINGBACK_TYPE_GOODWILL = 1
     PINGBACK_TYPE_NEGATIVE = 2
@@ -7,18 +9,28 @@ module Paymentwall
     PINGBACK_TYPE_RISK_REVIEWED_ACCEPTED = 201
     PINGBACK_TYPE_RISK_REVIEWED_DECLINED = 202
 
-    def initialize(parameters = {}, ipAddress = '')
+    IP_WHITELIST = [
+      '174.36.92.186',
+      '174.36.96.66',
+      '174.36.92.187',
+      '174.36.92.192',
+      '174.37.14.28'
+    ].freeze
+
+    attr_accessor :parameters
+
+    def initialize(parameters = {}, ip_address = '')
       super()
       @parameters = parameters
-      @ipAddress = ipAddress
+      @ip_address = ip_address
     end
 
-    def validate(skipIpWhitelistCheck = false)
+    def validate(skip_ip_whitelist_check = false)
       validated = false
 
-      if self.isParametersValid()
-        if self.isIpAddressValid() || skipIpWhitelistCheck
-          if self.isSignatureValid()
+      if valid_parameters?
+        if valid_ip_address? || skip_ip_whitelist_check
+          if valid_signature?
             validated = true
           else
             errors << 'Wrong signature'
@@ -33,177 +45,159 @@ module Paymentwall
       validated
     end
 
-    def isSignatureValid()
-      signatureParamsToSign = {}
+    def valid_signature?
+      signature_params_to_sign = {}
 
-      case Base::api_type
+      signature_params = case Base::api_type.to_i
       when Base::API_VC
-        signatureParams = Array['uid', 'currency', 'type', 'ref']
+        %w(uid currency type ref)
       when Base::API_GOODS
-        signatureParams = Array['uid', 'goodsid', 'slength', 'speriod', 'type', 'ref']
+        %w(uid goodsid slength speriod type ref)
       else
-        signatureParams = Array['uid', 'goodsid', 'type', 'ref']
+        %w(uid goodsid type ref)
       end
 
       if !@parameters.include?('sign_version') || @parameters['sign_version'].to_i == Base::SIGNATURE_VERSION_1
-        signatureParams.each do |field|
-          signatureParamsToSign[field] = @parameters.include?(field) ? @parameters[field] : nil
+        signature_params.each do |field|
+          signature_params_to_sign[field] = @parameters.include?(field) ? @parameters[field] : nil
         end
 
         @parameters['sign_version'] = Base::SIGNATURE_VERSION_1
-
       else
-        signatureParamsToSign = @parameters
+        signature_params_to_sign  = @parameters
       end
 
-      signatureCalculated = self.calculateSignature(signatureParamsToSign, Base::secret_key, @parameters['sign_version'])
+      signature_calculated = calculate_signature(signature_params_to_sign, Base::secret_key, @parameters['sign_version'])
 
-      signature = @parameters.include?('sig') ? @parameters['sig'] : nil
-
-      signature == signatureCalculated
+      @parameters['sig'] == signature_calculated
     end
 
-    def isIpAddressValid()
-      ipsWhitelist = [
-        '174.36.92.186',
-        '174.36.96.66',
-        '174.36.92.187',
-        '174.36.92.192',
-        '174.37.14.28'
-      ]
-
-      ipsWhitelist.include? @ipAddress
+    def valid_ip_address?
+      IP_WHITELIST.include? @ip_address
     end
 
-    def isParametersValid()
-      errorsNumber = 0
-      requiredParams = []
+    def valid_parameters?
+      errors_number = 0
+      required_params = []
 
-      case Base::api_type
+      case Base::api_type.to_i
       when Base::API_VC
-        requiredParams = ['uid', 'currency', 'type', 'ref', 'sig']
+        required_params = ['uid', 'currency', 'type', 'ref', 'sig']
       when Base::API_GOODS
-        requiredParams = ['uid', 'goodsid', 'type', 'ref', 'sig']
+        required_params = ['uid', 'goodsid', 'type', 'ref', 'sig']
       else
-        requiredParams = ['uid', 'goodsid', 'type', 'ref', 'sig']
+        required_params = ['uid', 'goodsid', 'type', 'ref', 'sig']
       end
 
-      requiredParams.each do |field|
-        if !@parameters.include?(field) # || $parameters[field] === ''
+      required_params.each do |field|
+        if !@parameters.include?(field)
           errors << "Parameter #{field} is missing"
-          errorsNumber += 1
+          errors_number += 1
         end
       end
 
-      errorsNumber == 0
+      errors_number == 0
     end
 
-    def getParameter(param)
-      if @parameters.include?(param)
-        return @parameters[param]
-      else
-        return nil
-      end
-    end
-
-    def getType()
+    def type
       pingbackTypes = [
-        self.class::PINGBACK_TYPE_REGULAR,
-        self.class::PINGBACK_TYPE_GOODWILL,
-        self.class::PINGBACK_TYPE_NEGATIVE,
-        self.class::PINGBACK_TYPE_RISK_UNDER_REVIEW,
-        self.class::PINGBACK_TYPE_RISK_REVIEWED_ACCEPTED,
-        self.class::PINGBACK_TYPE_RISK_REVIEWED_DECLINED
+        PINGBACK_TYPE_REGULAR,
+        PINGBACK_TYPE_GOODWILL,
+        PINGBACK_TYPE_NEGATIVE,
+        PINGBACK_TYPE_RISK_UNDER_REVIEW,
+        PINGBACK_TYPE_RISK_REVIEWED_ACCEPTED,
+        PINGBACK_TYPE_RISK_REVIEWED_DECLINED
       ]
 
       if @parameters.include?('type')
         if pingbackTypes.include?(@parameters['type'].to_i)
-          return @parameters['type'].to_i
+          @parameters['type'].to_i
         end
       end
-
-      return nil
     end
 
-    def getUserId
-      self.getParameter('uid').to_s
+    def user_id
+      parameters['uid'].to_s
     end
 
-    def getVirtualCurrencyAmount()
-      self.getParameter('currency').to_i
+    def virtual_currency_amount
+      parameters['currency'].to_i
     end
 
-    def getProductId()
-      self.getParameter('goodsid').to_s
+    def product_id
+      parameters['goodsid'].to_s
     end
 
-    def getProductPeriodLength()
-      self.getParameter('slength').to_i
+    def product_period_length
+      parameters['slength'].to_i
     end
 
-    def getProductPeriodType()
-      self.getParameter('speriod').to_s
+    def product_period_type
+      parameters['speriod'].to_s
     end
 
-    def getProduct()
-      Paymentwall::Product.new(
-        self.getProductId(),
+    def product
+      Product.new(
+        self.product_id,
         0,
         nil,
         nil,
-        self.getProductPeriodLength() > 0 ? Paymentwall::Product::TYPE_SUBSCRIPTION : Paymentwall::Product::TYPE_FIXED,
-        self.getProductPeriodLength(),
-        self.getProductPeriodType()
+        product_period_length > 0 ? Product::TYPE_SUBSCRIPTION : Product::TYPE_FIXED,
+        product_period_length,
+        product_period_type
       )
     end
 
-    def getProducts()
+    def products
       result = []
-      productIds = self.getParameter('goodsid')
+      product_ids = parameters['goodsid']
 
-      if productIds.kind_of?(Array) && productIds.length > 0
-        productIds.each do |id|
-          result.push(Paymentwall::Product.new(id))
+      if product_ids.kind_of?(Array)
+        product_ids.each do |id|
+          result.push(Product.new(id))
         end
       end
 
-      return result
+      result
     end
 
-    def getReferenceId()
-      self.getParameter('ref').to_s
+    def reference_id
+      parameters['ref'].to_s
     end
 
-    def getPingbackUniqueId()
-      self.getReferenceId().to_s + '_' + self.getType().to_s
+    def pingback_unique_id
+      "#{reference_id}_#{type}"
     end
 
-    def isDeliverable()
-      self.getType() == self.class::PINGBACK_TYPE_REGULAR ||
-      self.getType() == self.class::PINGBACK_TYPE_GOODWILL ||
-      self.getType() == self.class::PINGBACK_TYPE_RISK_REVIEWED_ACCEPTED
+    def deliverable?
+      [
+        PINGBACK_TYPE_REGULAR,
+        PINGBACK_TYPE_GOODWILL,
+        PINGBACK_TYPE_RISK_REVIEWED_ACCEPTED
+      ].include?(type)
     end
 
-    def isCancelable()
-      self.getType() == self.class::PINGBACK_TYPE_NEGATIVE ||
-      self.getType() == self.class::PINGBACK_TYPE_RISK_REVIEWED_DECLINED
+    def cancelable?
+      [
+        PINGBACK_TYPE_NEGATIVE,
+        PINGBACK_TYPE_RISK_REVIEWED_DECLINED
+      ].include?(type)
     end
 
-    def isUnderReview()
-      self.getType() == self.class::PINGBACK_TYPE_RISK_UNDER_REVIEW
+    def under_review?
+      type == PINGBACK_TYPE_RISK_UNDER_REVIEW
     end
 
-    protected
+    private
 
-    def calculateSignature(params, secret, version)
-
+    def calculate_signature(params, secret, version)
       params = params.clone
       params.delete('sig')
 
-      sortKeys = (version.to_i == Base::SIGNATURE_VERSION_2 or version.to_i == Base::SIGNATURE_VERSION_3)
-      keys = sortKeys ? params.keys.sort : params.keys
+      sort_keys = (version.to_i == Base::SIGNATURE_VERSION_2 or version.to_i == Base::SIGNATURE_VERSION_3)
+      keys = sort_keys ? params.keys.sort : params.keys
 
-      baseString = ''
+      base_string = ''
 
       keys.each do |name|
         p = params[name]
@@ -214,23 +208,39 @@ module Paymentwall
         end
 
         if p.kind_of?(Hash)
-          subKeys = sortKeys ? p.keys.sort : p.keys;
-          subKeys.each do |key|
+          sub_keys = sort_keys ? p.keys.sort : p.keys;
+          sub_keys.each do |key|
             value = p[key]
-            baseString += "#{name}[#{key}]=#{value}"
+            base_string += "#{name}[#{key}]=#{value}"
           end
         else
-          baseString += "#{name}=#{p}"
+          base_string += "#{name}=#{p}"
         end
       end
 
-      baseString += secret
+      base_string += secret
 
       require 'digest'
       if version.to_i == Base::SIGNATURE_VERSION_3
-        return Digest::SHA256.hexdigest(baseString)
+        Digest::SHA256.hexdigest(base_string)
       else
-        return Digest::MD5.hexdigest(baseString)
+        Digest::MD5.hexdigest(base_string)
+      end
+    end
+
+    def signature_version
+      @parameters['sign_version'] ||= Base::SIGNATURE_VERSION_1
+      @parameters['sign_version'].to_i
+    end
+
+    def signature_params
+      case Base::api_type
+      when Base::API_VC
+        %w(uid currency type ref)
+      when Base::API_GOODS
+        %w(uid goodsid slength speriod type ref)
+      else
+        %w(uid goodsid type ref)
       end
     end
   end
