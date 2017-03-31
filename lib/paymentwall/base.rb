@@ -1,66 +1,65 @@
 module Paymentwall
-	class Base
+  class Base
+    VERSION = '1.0.0'
 
-		VERSION = '1.0.0'
+    API_VC = 1
+    API_GOODS = 2
+    API_CART = 3
 
-		API_VC = 1
-		API_GOODS = 2
-		API_CART = 3
+    CONTROLLER_PAYMENT_VIRTUAL_CURRENCY = 'ps'
+    CONTROLLER_PAYMENT_DIGITAL_GOODS = 'subscription'
+    CONTROLLER_PAYMENT_CART = 'cart'
 
-		CONTROLLER_PAYMENT_VIRTUAL_CURRENCY = 'ps'
-		CONTROLLER_PAYMENT_DIGITAL_GOODS = 'subscription'
-		CONTROLLER_PAYMENT_CART = 'cart'
+    DEFAULT_SIGNATURE_VERSION = 3
+    SIGNATURE_VERSION_1 = 1
+    SIGNATURE_VERSION_2 = 2
+    SIGNATURE_VERSION_3 = 3
 
-		DEFAULT_SIGNATURE_VERSION = 3
-		SIGNATURE_VERSION_1 = 1
-		SIGNATURE_VERSION_2 = 2
-		SIGNATURE_VERSION_3 = 3
+    @@apiType
+    @@appKey
+    @@secretKey
 
-		@@apiType
-		@@appKey
-		@@secretKey
+    def self.setApiType(value)
+      @@apiType = value
+      self
+    end
 
-		def self.setApiType(value)
-			@@apiType = value
-			self
-		end
+    def self.getApiType
+      @@apiType.to_i
+    end
 
-		def self.getApiType
-			@@apiType.to_i
-		end
+    def self.setAppKey(value)
+      @@appKey = value
+      self
+    end
 
-		def self.setAppKey(value)
-			@@appKey = value
-			self
-		end
+    def self.getAppKey
+      @@appKey.to_s
+    end
 
-		def self.getAppKey
-			@@appKey.to_s
-		end
+    def self.setSecretKey(value)
+      @@secretKey = value
+      self
+    end
 
-		def self.setSecretKey(value)
-			@@secretKey = value
-			self
-		end
+    def self.getSecretKey
+      @@secretKey.to_s
+    end
 
-		def self.getSecretKey
-			@@secretKey.to_s
-		end
+    def getErrors
+      @errors
+    end
 
-		def getErrors
-			@errors
-		end
+    def getErrorSummary
+      @errors.join("\n")
+    end
 
-		def getErrorSummary
-			@errors.join("\n")
-		end
+    protected
 
-		protected
-
-		def appendToErrors(err)
-			@errors ||=[]
-			@errors.push(err)
-			self
-		end
-	end
+    def appendToErrors(err)
+      @errors ||=[]
+      @errors.push(err)
+      self
+    end
+  end
 end
